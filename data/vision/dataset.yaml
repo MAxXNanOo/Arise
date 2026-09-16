@@ -1,0 +1,12 @@
+# ตัวอย่างไฟล์ data/dataset.yaml
+path: /home/max/WORK/KU/AI/Arise/data/yolo_dataset # พรอมต์โฟลเดอร์หลักของรูปภาพ
+train: images/train
+val: images/val
+
+# กรณีเทรน Object Detection ทั่วไป (เช่น ตรวจจับ ปืน, มีด, หรือคนปะทะกัน)
+names:
+  0: normal
+  1: fight
+  2: run
+  3: fall
+  4: shoot
