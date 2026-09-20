@@ -1,20 +1,41 @@
+import os
 from ultralytics import YOLO
 
+# ==========================================
+# ⚙️ 1. กำหนดค่าคอนฟิกสเปกสำหรับเทรน YOLOv11n
+# ==========================================
+# เลือกรุ่นของโมเดล YOLOv11 (สเปกตัวเล็กสุดแต่รันเร็วมากคือห้อยท้ายด้วย 'n')
+# - งานตรวจจับวัตถุ/กรอบกล่อง (Object Detection) -> ใช้ "yolo11n.pt"
+# - งานตรวจจับข้อต่อร่างกาย (Pose Estimation)   -> ใช้ "yolo11n-pose.pt"
+# MODEL_TYPE = "yolo11n.pt" 
+MODEL_TYPE = "yolo11n-pose.pt"
 
-# YOLOv11 Pose
-model = YOLO("yolo11n-pose.pt")
+# เส้นทางไฟล์ .yaml คอนฟิกชุดข้อมูลที่คุณสร้างไว้ในเครื่อง
+YAML_PATH = "/home/max/WORK/KU/AI/Arise/data/DATASET-PERSONAS-KEYPOINT.v4i.yolov8/data.yaml"
 
 
-model.train(
-    data="vision/dataset/data.yaml",
+# ==========================================
+# 🚀 2. เริ่มต้นการดาวน์โหลดและสั่งเทรนโมเดล
+# ==========================================
+if __name__ == "__main__":
+    print(f"🎬 กำลังเริ่มต้นโหลด Base Model: {MODEL_TYPE}...")
+    model = YOLO(MODEL_TYPE)
 
-    epochs=100,
-
-    imgsz=640,
-
-    batch=16,
-
-    workers=4,
-
-    name="yolo11_pose"
-)
+    print("\n🏋️ เริ่มต้นกระบวนการเทรน YOLOv11n...")
+    
+    # สั่งเริ่มเทรน (Fine-tuning) ด้วยฟังก์ชัน .train()
+    results = model.train(
+        data=YAML_PATH,         # ระบุลิงก์ไฟล์คอนฟิกข้อมูลย่อย
+        epochs=1,            # จำนวนรอบในการเทรน (ปรับเพิ่ม/ลดได้ตามใจชอบ เช่น 50, 100, 300)
+        imgsz=640,             # ขนาดความละเอียดภาพที่ส่งเข้าไปเทรน (มาตรฐานคือนิยมใช้ 640x640)
+        batch=16,              # จำนวนรูปที่ส่งไปประมวลผลต่อรอบ (ลดลงเหลือ 8 หรือ 4 ได้หาก VRAM การ์ดจอเต็ม)
+        # device=0,              # ระบุฮาร์ดแวร์ -> ใส่ 0 เพื่อรันบนการ์ดจอ Nvidia (CUDA) หรือใส่ 'cpu' ถ้ารันบนซีพียู
+        device='cpu',
+        workers=4,             # จำนวนเธรดการโหลดรูป (ถ้าเจอ Error ดักเรื่องดึงข้อมูลช้าให้ปรับเหลือ 0)
+        save=True,             # สั่งให้เซฟค่าน้ำหนักโมเดล (Weights) ระหว่างรันโดยอัตโนมัติ
+        project="runs/pose", # ชื่อโฟลเดอร์หลักที่จะเก็บล็อกผลลัพธ์
+        name="yolo11n_arise"   # ชื่อโปรเจกต์ย่อยสำหรับเก็บผลงานรอบนี้
+    )
+    
+    print("\n🎉 กระบวนการเทรนเสร็จสิ้นเรียบร้อยแล้ว!")
+    print("💾 ค่าน้ำหนักโมเดลตัวที่ดีที่สุดจะถูกเก็บไว้ที่: runs/detect/yolo11n_arise/weights/best.pt")
