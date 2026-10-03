@@ -24,6 +24,7 @@ class ActionGRU(nn.Module):
 # ⚙️ 2. ตั้งค่า Path โมเดลที่คุณเทรนเอง
 # ==========================================
 YOLO_WEIGHTS = "yolo11n-pose.pt"            # หรือใส่ Path โมเดล YOLO ที่คุณ Fine-tune เอง
+# YOLO_WEIGHTS = 'runs/pose/runs/pose/yolo11n_ariseฝ/weights/best.pt'
 GRU_WEIGHTS = "backend/model/action_gru_model.pt"         # ไฟล์น้ำหนัก GRU 5 คลาสที่เทรนเสร็จจากขั้นตอนก่อนหน้า
 
 # นิยามชื่อคลาสภาษาไทยและสีที่จะแสดงบนหัวของแต่ละคน
@@ -69,11 +70,14 @@ def vision_realtime_thread(shared_results=None, data_lock=None):
             print("❌ ไม่สามารถดึงภาพจากกล้องโน้ตบุ๊กได้")
             break
             
-        # 1. ส่งภาพเข้า YOLOv11 เพื่อแทร็กกิ้งคนและหาคีย์พอยต์แบบเรียลไทม์
+                # 1. ส่งภาพเข้า YOLOv11 เพื่อแทร็กกิ้งคนและหาคีย์พอยต์แบบเรียลไทม์
         results = yolo_model.track(frame, persist=True, verbose=False)
         
-        # คัดลอกเฟรมไว้สำหรับวาดตัวหนังสือแสดงผลเอง
-        display_frame = frame.copy()
+        # 💡 ใช้คำสั่ง .plot() เพื่อให้ YOLO วาดกล่องและจุดคีย์พอยต์ 17 จุดให้เองโดยอัตโนมัติ
+        if len(results) > 0:
+            display_frame = results[0].plot(boxes=True, conf=False) # สั่งเปิดวาดกล่องและโครงกระดูก
+        else:
+            display_frame = frame.copy()
         
         current_frame_actions = [] # เอาไว้บันทึกว่าในเฟรมนี้เจอพฤติกรรมเด่นๆ อะไรบ้าง
         
@@ -110,7 +114,7 @@ def vision_realtime_thread(shared_results=None, data_lock=None):
                     buffers[track_id].pop(0)
                     
                 # กำหนดสถานะเริ่มต้นระหว่างสะสมเฟรม
-                action_text = "กำลังคำนวณ..."
+                action_text = "Calculating..."
                 text_color = (128, 128, 128)
                 
                 # 3. ส่งข้อมูลให้โมเดล GRU ประมวลผลเมื่อสะสมเฟรมของคนนั้นครบ 30 เฟรมต่อเนื่อง
@@ -125,20 +129,17 @@ def vision_realtime_thread(shared_results=None, data_lock=None):
                         pred_class = np.argmax(probabilities)
                         confidence = probabilities[pred_class]
                         
-                        # ตรวจจับเฉพาะกรณีที่ AI มั่นใจมากกว่า 60% เพื่อป้องกันหน้าจอเต้นกระพริบไปมา
+                        # ตรวจจับเฉพาะกรณีที่ AI มั่นใจมากกว่า 60%
                         if confidence > 0.60:
                             action_text = f"{CLASS_MAP[pred_class]['name']} ({confidence*100:.1f}%)"
                             text_color = CLASS_MAP[pred_class]['color']
                             current_frame_actions.append(CLASS_MAP[pred_class]['name'])
                 
-                # 4. วาดผลลัพธ์แยกตามบุคคลลงบนหน้าจอวิดีโอสด
+                # 4. เขียนคำทำนายจาก GRU ทับลงไปบนหัวของคนนั้นๆ (กล่องและโครงกระดูก ปล่อยให้ผลลัพธ์จาก .plot() จัดการ)
                 x1, y1, x2, y2 = map(int, bbox)
-                # วาดกล่อง Bounding Box รอบตัวคน
-                cv2.rectangle(display_frame, (x1, y1), (x2, y2), text_color, 2)
-                # เขียนชื่อ ID และคำทำนายจาก GRU ไว้บนหัวของคนนั้นๆ
                 cv2.putText(display_frame, f"ID {track_id}: {action_text}", (x1, max(y1 - 10, 20)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2, cv2.LINE_AA)
-        
+
         # 5. ส่งค่าการทำนายฝั่งภาพขึ้นระบบแชร์กลาง (เพื่อเอาไป Fusion กับโมเดลเสียง)
         if shared_results is not None and data_lock is not None:
             # ดึงสถานะร้ายแรงที่สุดในเฟรมนั้นส่งออกไป (เช่น ถ้ามีคนสู้กันหรือยิงกัน ให้ส่งคลาสนั้นออกไปเลย)
