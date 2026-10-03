@@ -1,0 +1,31 @@
+{
+  "1": {
+    "name": "Camera 1",
+    "latitude": 14.020792,
+    "longitude": 99.971371,
+    "location": "ห้องเรียน AI",
+    "building": "E9",
+    "floor": "ชั้น 4",
+    "description": "ห้องเรียน"
+  },
+
+  "2": {
+    "name": "Camera 2",
+    "latitude": 13.7568,
+    "longitude": 100.5025,
+    "location": "อาคารวิศวกรรม",
+    "building": "Building A",
+    "floor": "ชั้น 2",
+    "description": "บริเวณทางเดินหน้าห้อง Lab"
+  },
+
+  "3": {
+    "name": "Camera 3",
+    "latitude": 13.7572,
+    "longitude": 100.5031,
+    "location": "อาคารวิทยาศาสตร์",
+    "building": "Building B",
+    "floor": "ชั้น 1",
+    "description": "บริเวณลานจอดรถ"
+  }
+}

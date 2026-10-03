@@ -1,0 +1,148 @@
+{
+  "camera": {
+    "device_index": 0,
+    "width": 1280,
+    "height": 720,
+    "fps": 30
+  },
+  "audio": {
+    "device_index": null,
+    "sample_rate": 16000,
+    "chunk_duration_sec": 0.975
+  },
+  "web_alert": {
+    "enabled": true,
+    "url": "http://localhost:5500/api/alerts",
+    "timeout_sec": 2.0
+  },
+  "event_correlation": {
+    "enabled": true,
+    "window_sec": 5.0,
+
+    "rules": {
+        "fight": {
+            "enabled": true,
+            "window_sec": 5.0,
+            "cooldown_sec": 10.0,
+            "min_score": 0.65,
+            "signals": {
+                "action": {
+                    "classes": [
+                        "boxing",
+                        "fighting"
+                    ],
+                    "threshold": 0.80,
+                    "weight": 0.55,
+                    "max_count": 5
+                },
+                "people": {
+                    "min_people": 2,
+                    "weight": 0.20
+                },
+                "audio": {
+                    "classes": [
+                        "Screaming"
+                    ],
+                    "threshold": 0.40,
+                    "weight": 0.25,
+                    "max_count": 5
+                }
+            }
+        },
+        "gunshot": {
+            "enabled": true,
+            "window_sec": 5.0,
+            "cooldown_sec": 10.0,
+            "min_score": 0.60,
+            "signals": {
+                "handgun": {
+                    "classes": [
+                        "handgun"
+                    ],
+                    "threshold": 0.80,
+                    "weight": 0.65,
+                    "max_count": 3
+                },
+                "audio": {
+                    "classes": [
+                        "Gunshot, gunfire"
+                    ],
+                    "threshold": 0.35,
+                    "weight": 0.35,
+                    "max_count": 3
+                }
+            }
+        },
+        "panic": {
+            "enabled": true,
+            "window_sec": 5.0,
+            "cooldown_sec": 10.0,
+            "min_score": 0.60,
+            "signals": {
+                "action": {
+                    "classes": [
+                        "running"
+                    ],
+                    "threshold": 0.60,
+                    "weight": 0.45,
+                    "max_count": 5
+                },
+                "audio": {
+                    "classes": [
+                        "Screaming"
+                    ],
+                    "threshold": 0.40,
+                    "weight": 0.30,
+                    "max_count": 5
+                },
+                "people": {
+                    "min_people": 2,
+                    "weight": 0.25
+                }
+            }
+        }
+    },
+
+    "cooldown_sec": 10.0
+  },
+  "models": {
+    "object_detector": {
+      "type": "yolo_detect",
+      "path": "runs/detect/detectWeapon/train-50/weights/best.pt",
+      "conf_threshold": 0.45,
+      "classes": {
+        "0": { "name": "handgun", "alert": true, "threshold": 0.8 }
+      }
+    },
+    "pose_estimator": {
+      "type": "yolo_pose",
+      "path": "yolo11n-pose.pt",
+      "conf_threshold": 0.4,
+      "num_keypoints": 17
+    },
+    "action_classifier": {
+      "type": "gru",
+      "path": "runs/best_action_gru.pth",
+      "sequence_length": 30,
+      "classes": {
+        "0": { "name": "boxing", "alert": true, "threshold": 0.8 },
+        "1": { "name": "handclapping", "alert": false, "threshold": 0.0 },
+        "2": { "name": "handwaving", "alert": false, "threshold": 0.0 },
+        "3": { "name": "jogging", "alert": false, "threshold": 0.0 },
+        "4": { "name": "running", "alert": true, "threshold": 0.6 },
+        "5": { "name": "walking", "alert": false, "threshold": 0.0}
+      }
+    },
+    "audio_classifier": {
+      "type": "yamnet",
+      "path": "https://tfhub.dev/google/yamnet/1",
+      "class_map_path": null,
+      "classes": {
+        "Screaming": { "alert": true, "threshold": 0.4 },
+        "Gunshot, gunfire": { "alert": true, "threshold": 0.35 },
+        "Explosion": { "alert": true, "threshold": 0.35 },
+        "Siren": { "alert": true, "threshold": 0.3 }
+      }
+    }
+  }
+}
